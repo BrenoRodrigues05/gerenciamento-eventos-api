@@ -38,7 +38,14 @@ namespace APIGerenciamento.Controllers
                 return BadRequest("Participante já inscrito.");
 
             await _uow.Inscricoes.AddAsync(ins);
+
+            
+            evt.Vagas -= 1;
+
+            _uow.Eventos.Update(evt);
+
             await _uow.CommitAsync();
+
             return CreatedAtAction(nameof(Create), new { id = ins.Id }, ins);
         }
     }

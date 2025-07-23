@@ -11,33 +11,39 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Configuração do Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Configuração do banco de dados
 var mysqlconnection = builder.Configuration.GetConnectionString("DefaultConnection");
-
 builder.Services.AddDbContext<APIGerenciamentoContext>(options =>
     options.UseMySql(mysqlconnection, ServerVersion.AutoDetect(mysqlconnection)));
 
+// Injeção de dependências
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-builder.Services.AddControllers(options =>
-{
-    options.Filters.Add<APILoggingFilter>();
-});
-builder.Logging.AddProvider(new CustomLoggerProvider(new CustomLoggerProviderConfiguration
-{
-    LogLevel = LogLevel.Information
-  
-}));
-
 builder.Services.AddScoped<ConfigService>();
 builder.Services.AddScoped<AuthService>();
 
+// Filtros e Serialização JSON
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<APILoggingFilter>();
+})
+.AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+    options.JsonSerializerOptions.WriteIndented = true;
+});
+
+// Logger customizado
+builder.Logging.AddProvider(new CustomLoggerProvider(new CustomLoggerProviderConfiguration
+{
+    LogLevel = LogLevel.Information
+}));
+
+// Autenticação JWT
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
@@ -55,9 +61,10 @@ builder.Services.AddAuthentication("Bearer")
 
 var app = builder.Build();
 
+// Middleware de exceções
 app.UseMiddleware<ExceptionMiddleware>();
 
-// Configure the HTTP request pipeline.
+// Swagger no ambiente de desenvolvimento
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -65,8 +72,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

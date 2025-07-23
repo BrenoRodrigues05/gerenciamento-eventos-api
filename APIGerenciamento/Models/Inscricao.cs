@@ -1,6 +1,7 @@
 ﻿using APIGerenciamento.Interfaces;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace APIGerenciamento.Models
 {
@@ -11,6 +12,7 @@ namespace APIGerenciamento.Models
         public int Id { get; set; }
         [Required]
         public int EventoId { get; set; }
+        [JsonIgnore]
         public Evento? Evento { get; set; }
         [Required]  
         public int ParticipanteId { get; set; }
