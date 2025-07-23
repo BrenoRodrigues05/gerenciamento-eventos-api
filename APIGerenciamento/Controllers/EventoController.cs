@@ -9,7 +9,8 @@ namespace APIGerenciamento.Controllers
     [ApiController]
     public class EventoController : GenericController<Evento>
     {
-        public EventoController(IUnitOfWork unitOfWork) : base(unitOfWork)
+        public EventoController(IUnitOfWork unitOfWork, ILogger
+            <GenericController<Evento>> logger) : base(unitOfWork, logger)
         {
         }
     }

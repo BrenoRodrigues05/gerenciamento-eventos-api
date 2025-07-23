@@ -9,7 +9,8 @@ namespace APIGerenciamento.Controllers
     [ApiController]
     public class ParticipanteController : GenericController<Participante>
     {
-        public ParticipanteController(IUnitOfWork unitOfWork) : base(unitOfWork)
+        public ParticipanteController(IUnitOfWork unitOfWork, ILogger
+            <GenericController<Participante>> logger) : base(unitOfWork, logger)
         {
         }
     }

@@ -1,9 +1,13 @@
 using APIGerenciamento.Context;
 using APIGerenciamento.Filters;
 using APIGerenciamento.Logging;
+using APIGerenciamento.Middlewares;
 using APIGerenciamento.Repositories;
+using APIGerenciamento.Services;
 using APIGerenciamento.UnitOfWork;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,7 +35,27 @@ builder.Logging.AddProvider(new CustomLoggerProvider(new CustomLoggerProviderCon
   
 }));
 
+builder.Services.AddScoped<ConfigService>();
+builder.Services.AddScoped<AuthService>();
+
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
+    {
+        var config = builder.Configuration;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = config["JwtSettings:Issuer"],
+            ValidAudience = config["JwtSettings:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtSettings:SecretKey"]))
+        };
+    });
+
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -41,6 +65,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 
 app.UseAuthorization();
 
