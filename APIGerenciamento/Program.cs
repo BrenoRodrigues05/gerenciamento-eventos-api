@@ -1,7 +1,11 @@
 using APIGerenciamento.Context;
+using APIGerenciamento.DTOs;
+using APIGerenciamento.DTOs.Mappings;
 using APIGerenciamento.Filters;
+using APIGerenciamento.Interfaces;
 using APIGerenciamento.Logging;
 using APIGerenciamento.Middlewares;
+using APIGerenciamento.Models;
 using APIGerenciamento.Repositories;
 using APIGerenciamento.Services;
 using APIGerenciamento.UnitOfWork;
@@ -25,6 +29,9 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<ConfigService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<IDTOMapper<ParticipanteDTO, Participante>, ParticipanteMapper>();
+builder.Services.AddScoped<IDTOMapper<EventoDTO, Evento>, EventoMapper>();
+builder.Services.AddScoped<IDTOMapper<InscricaoDTO, Inscricao>, InscricaoMapper>();
 
 // Filtros e Serialização JSON
 builder.Services.AddControllers(options =>
@@ -42,6 +49,7 @@ builder.Logging.AddProvider(new CustomLoggerProvider(new CustomLoggerProviderCon
 {
     LogLevel = LogLevel.Information
 }));
+
 
 // Autenticação JWT
 builder.Services.AddAuthentication("Bearer")

@@ -1,4 +1,5 @@
-﻿using APIGerenciamento.Models;
+﻿using APIGerenciamento.DTOs;
+using APIGerenciamento.Models;
 using APIGerenciamento.UnitOfWork;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,43 +11,73 @@ namespace APIGerenciamento.Controllers
     public class InscricaoController : ControllerBase
     {
         private readonly IUnitOfWork _uow;
-        public InscricaoController(IUnitOfWork u) => _uow = u;
+
+        public InscricaoController(IUnitOfWork uow) => _uow = uow;
 
         [HttpGet]
-        public async Task<IActionResult> GetAll() =>
-        Ok(await _uow.Inscricoes.GetAllAsync());
+        public async Task<IActionResult> GetAll()
+        {
+            var inscricoes = await _uow.Inscricoes.GetAllAsync();
+
+            var resposta = inscricoes.Select(i => new InscricaoDTO
+            {
+                Id = i.Id,
+                EventoId = i.EventoId,
+                ParticipanteId = i.ParticipanteId,
+                DataInscricao = i.DataInscricao,
+                NomeEvento = i.Evento?.Titulo,
+                NomeParticipante = i.Participante?.Nome
+            });
+
+            return Ok(resposta);
+        }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Inscricao ins)
+        public async Task<IActionResult> Create([FromBody] InscricaoDTO dto)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            var evt = await _uow.Eventos.GetByIdAsync(ins.EventoId);
-            if (evt is null) return BadRequest("Evento não encontrado.");
+            var evento = await _uow.Eventos.GetByIdAsync(dto.EventoId);
+            if (evento is null)
+                return BadRequest("Evento não encontrado.");
 
-            var inscricoes = (await _uow.Inscricoes.GetAllAsync())
-                               .Count(i => i.EventoId == ins.EventoId);
-            if (inscricoes >= evt.Vagas)
+            var participante = await _uow.Participantes.GetByIdAsync(dto.ParticipanteId);
+            if (participante is null)
+                return BadRequest("Participante não encontrado.");
+
+            var inscricoesEvento = (await _uow.Inscricoes.GetAllAsync())
+                .Count(i => i.EventoId == dto.EventoId);
+
+            if (inscricoesEvento >= evento.Vagas)
                 return BadRequest("Evento lotado.");
 
-            var part = await _uow.Participantes.GetByIdAsync(ins.ParticipanteId);
-            if (part is null) return BadRequest("Participante não encontrado.");
+            var jaInscrito = (await _uow.Inscricoes.GetAllAsync())
+                .Any(i => i.EventoId == dto.EventoId && i.ParticipanteId == dto.ParticipanteId);
 
-            bool exists = (await _uow.Inscricoes.GetAllAsync())
-                           .Any(i => i.EventoId == ins.EventoId && i.ParticipanteId == ins.ParticipanteId);
-            if (exists)
+            if (jaInscrito)
                 return BadRequest("Participante já inscrito.");
 
-            await _uow.Inscricoes.AddAsync(ins);
+            var novaInscricao = new Inscricao
+            {
+                EventoId = dto.EventoId,
+                ParticipanteId = dto.ParticipanteId,
+                DataInscricao = DateTime.Now
+            };
 
-            
-            evt.Vagas -= 1;
+            await _uow.Inscricoes.AddAsync(novaInscricao);
 
-            _uow.Eventos.Update(evt);
+            evento.Vagas -= 1;
+            _uow.Eventos.Update(evento);
 
             await _uow.CommitAsync();
 
-            return CreatedAtAction(nameof(Create), new { id = ins.Id }, ins);
+            dto.Id = novaInscricao.Id;
+            dto.DataInscricao = novaInscricao.DataInscricao;
+            dto.NomeEvento = evento.Titulo;
+            dto.NomeParticipante = participante.Nome;
+
+            return CreatedAtAction(nameof(Create), new { id = dto.Id }, dto);
         }
     }
 }

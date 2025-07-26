@@ -10,29 +10,34 @@ namespace APIGerenciamento.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class GenericController<T> : ControllerBase where T : class, IEntidade
+    public class GenericController<TEntity, TDto> : ControllerBase where TEntity : class, IEntidade
+    where TDto : class
     {
-        private readonly IRepository<T> _repository;
-        private readonly ILogger<GenericController<T>> _logger;
+        private readonly IRepository<TEntity> _repository;
+        private readonly ILogger<GenericController<TEntity, TDto>> _logger;
         private readonly IUnitOfWork _unitOfWork;
-        public GenericController(IUnitOfWork unitOfWork, ILogger<GenericController<T>> logger)
+        private readonly IDTOMapper<TDto, TEntity> _mapper;
+        public GenericController(IUnitOfWork unitOfWork, ILogger<GenericController<TEntity, TDto>> logger, 
+            IDTOMapper<TDto, TEntity> mapper)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
+            _mapper = mapper;
 
-            _repository = typeof(T).Name switch
+            _repository = typeof(TEntity).Name switch
             {
-                nameof(Evento) => (IRepository<T>)_unitOfWork.Eventos,
-                nameof(Participante) => (IRepository<T>)_unitOfWork.Participantes,
-                nameof(Inscricao) => (IRepository<T>)_unitOfWork.Inscricoes,
-                _ => throw new NotSupportedException($"Repositório não encontrado para {typeof(T).Name}")
+                nameof(Evento) => (IRepository<TEntity>)_unitOfWork.Eventos,
+                nameof(Participante) => (IRepository<TEntity>)_unitOfWork.Participantes,
+                nameof(Inscricao) => (IRepository<TEntity>)_unitOfWork.Inscricoes,
+                _ => throw new NotSupportedException($"Repositório não encontrado para {typeof(TEntity).Name}")
             };
         }
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var list = await _repository.GetAllAsync();
-            return Ok(list);
+            var entities = await _repository.GetAllAsync();
+            var dtos = entities.Select(e => _mapper.ToDto(e)).ToList();
+            return Ok(dtos);
         }
 
         [HttpGet("{id}")]
@@ -40,37 +45,40 @@ namespace APIGerenciamento.Controllers
         {
             var entity = await _repository.GetByIdAsync(id);
             if (entity == null) return NotFound();
-            return Ok(entity);
+            return Ok(_mapper.ToDto(entity));
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] T entity)
+        public async Task<IActionResult> Create([FromBody] TDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             try
             {
+                var entity = _mapper.ToEntity(dto);
                 await _repository.AddAsync(entity);
                 await _unitOfWork.CommitAsync();
 
-                return CreatedAtAction(nameof(GetById), new { id = GetEntityId(entity) }, entity);
+                var dtoCreated = _mapper.ToDto(entity);
+                return CreatedAtAction(nameof(GetById), new { id = GetEntityId(entity) }, dtoCreated);
             }
             catch (Exception)
             {
-                _logger.LogError("❌ Erro ao criar {Entity}", typeof(T).Name);
+                _logger.LogError("❌ Erro ao criar {Entity}", typeof(TEntity).Name);
                 return StatusCode(500, "Erro interno ao criar o recurso.");
             }
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] T entity)
+        public async Task<IActionResult> Update(int id, [FromBody] TDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null) return NotFound();
 
-            _repository.Update(entity);
+            var updatedEntity = _mapper.ToEntity(dto);
+            _repository.Update(updatedEntity);
             await _unitOfWork.CommitAsync();
             return NoContent();
         }
@@ -86,7 +94,7 @@ namespace APIGerenciamento.Controllers
             return NoContent();
         }
 
-        private object GetEntityId(T entity)
+        private object GetEntityId(object entity)
         {
             var prop = entity?.GetType().GetProperty("Id");
             if (prop == null)
