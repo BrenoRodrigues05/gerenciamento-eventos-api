@@ -1,6 +1,7 @@
 using APIGerenciamento.Context;
 using APIGerenciamento.DTOs;
 using APIGerenciamento.DTOs.Mappings;
+using APIGerenciamento.DTOs.Patch;
 using APIGerenciamento.Filters;
 using APIGerenciamento.Interfaces;
 using APIGerenciamento.Logging;
@@ -29,9 +30,9 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<ConfigService>();
 builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<IDTOMapper<ParticipanteDTO, Participante>, ParticipanteMapper>();
-builder.Services.AddScoped<IDTOMapper<EventoDTO, Evento>, EventoMapper>();
-builder.Services.AddScoped<IDTOMapper<InscricaoDTO, Inscricao>, InscricaoMapper>();
+builder.Services.AddScoped<IDTOMapper<ParticipanteDTO, Participante, ParticipantePatchDTO>, ParticipanteMapper>();
+builder.Services.AddScoped<IDTOMapper<EventoDTO, Evento, EventoPatchDTO>, EventoMapper>();
+builder.Services.AddScoped<IDTOMapper<InscricaoDTO, Inscricao, InscricaoPatchDTO>, InscricaoMapper>();
 
 // Filtros e Serialização JSON
 builder.Services.AddControllers(options =>
@@ -42,7 +43,7 @@ builder.Services.AddControllers(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
     options.JsonSerializerOptions.WriteIndented = true;
-});
+}).AddNewtonsoftJson();
 
 // Logger customizado
 builder.Logging.AddProvider(new CustomLoggerProvider(new CustomLoggerProviderConfiguration

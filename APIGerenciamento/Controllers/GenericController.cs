@@ -1,8 +1,10 @@
-﻿using APIGerenciamento.Interfaces;
+﻿using APIGerenciamento.DTOs.Patch;
+using APIGerenciamento.Interfaces;
 using APIGerenciamento.Models;
 using APIGerenciamento.Repositories;
 using APIGerenciamento.UnitOfWork;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using System.Runtime.InteropServices;
 
@@ -10,15 +12,16 @@ namespace APIGerenciamento.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class GenericController<TEntity, TDto> : ControllerBase where TEntity : class, IEntidade
-    where TDto : class
+    public class GenericController<TEntity, TDto, TPatchDto> : ControllerBase where TEntity : class, IEntidade
+    where TDto : class where TPatchDto : class
     {
         private readonly IRepository<TEntity> _repository;
-        private readonly ILogger<GenericController<TEntity, TDto>> _logger;
+        private readonly ILogger<GenericController<TEntity, TDto, TPatchDto>> _logger;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IDTOMapper<TDto, TEntity> _mapper;
-        public GenericController(IUnitOfWork unitOfWork, ILogger<GenericController<TEntity, TDto>> logger, 
-            IDTOMapper<TDto, TEntity> mapper)
+        private readonly IDTOMapper<TDto, TEntity, TPatchDto> _mapper;
+
+        public GenericController(IUnitOfWork unitOfWork, ILogger<GenericController<TEntity, TDto, TPatchDto>> logger, 
+            IDTOMapper<TDto, TEntity, TPatchDto> mapper)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
@@ -82,6 +85,29 @@ namespace APIGerenciamento.Controllers
             await _unitOfWork.CommitAsync();
             return NoContent();
         }
+
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> Patch(int id, [FromBody] JsonPatchDocument<TPatchDto> patchDoc)
+        {
+            if (patchDoc == null) return BadRequest();
+
+            var entity = await _repository.GetByIdAsync(id);
+            if (entity == null) return NotFound();
+
+            var patchDto = _mapper.ToPatchDto(entity);
+
+            patchDoc.ApplyTo(patchDto, ModelState);
+
+            if (!TryValidateModel(patchDto)) return BadRequest(ModelState);
+
+            _mapper.PatchToEntity(patchDto, entity);
+
+            _repository.Update(entity);
+            await _unitOfWork.CommitAsync();
+
+            return NoContent();
+        }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

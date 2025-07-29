@@ -1,4 +1,5 @@
 ﻿using APIGerenciamento.DTOs;
+using APIGerenciamento.DTOs.Patch;
 using APIGerenciamento.Interfaces;
 using APIGerenciamento.Models;
 using APIGerenciamento.UnitOfWork;
@@ -9,11 +10,13 @@ namespace APIGerenciamento.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class EventoController : GenericController<Evento, EventoDTO>
+    public class EventoController : GenericController<Evento, EventoDTO, EventoPatchDTO>
     {
-        public EventoController(IUnitOfWork unitOfWork, ILogger
-            <GenericController<Evento, EventoDTO>> logger, IDTOMapper<EventoDTO, Evento> mapper) : 
-            base(unitOfWork, logger, mapper)
+        public EventoController(
+     IUnitOfWork unitOfWork,
+     ILogger<GenericController<Evento, EventoDTO, EventoPatchDTO>> logger,
+     IDTOMapper<EventoDTO, Evento, EventoPatchDTO> mapper)
+     : base(unitOfWork, logger, mapper)
         {
         }
     }
