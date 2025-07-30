@@ -2,6 +2,7 @@
 using APIGerenciamento.Interfaces;
 using APIGerenciamento.Models;
 using APIGerenciamento.Repositories;
+using APIGerenciamento.Services;
 using APIGerenciamento.UnitOfWork;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
@@ -19,13 +20,15 @@ namespace APIGerenciamento.Controllers
         private readonly ILogger<GenericController<TEntity, TDto, TPatchDto>> _logger;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IDTOMapper<TDto, TEntity, TPatchDto> _mapper;
+        private readonly EventosService _eventosService;
 
         public GenericController(IUnitOfWork unitOfWork, ILogger<GenericController<TEntity, TDto, TPatchDto>> logger, 
-            IDTOMapper<TDto, TEntity, TPatchDto> mapper)
+            IDTOMapper<TDto, TEntity, TPatchDto> mapper, EventosService eventosService)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
             _mapper = mapper;
+            _eventosService = eventosService;
 
             _repository = typeof(TEntity).Name switch
             {
@@ -49,6 +52,14 @@ namespace APIGerenciamento.Controllers
             var entity = await _repository.GetByIdAsync(id);
             if (entity == null) return NotFound();
             return Ok(_mapper.ToDto(entity));
+        }
+
+        [HttpGet("Paginação")]
+
+        public async Task<IActionResult> GetPaginado([FromQuery] int pagNumer = 1,  [FromQuery] int pageSize = 10)
+        {
+            var result = await _eventosService.GetPaginadosAsync(pagNumer, pageSize);
+            return Ok(result);
         }
 
         [HttpPost]

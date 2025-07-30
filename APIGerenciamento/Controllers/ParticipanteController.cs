@@ -2,6 +2,7 @@
 using APIGerenciamento.DTOs.Patch;
 using APIGerenciamento.Interfaces;
 using APIGerenciamento.Models;
+using APIGerenciamento.Services;
 using APIGerenciamento.UnitOfWork;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,8 +16,8 @@ namespace APIGerenciamento.Controllers
         public ParticipanteController(
     IUnitOfWork unitOfWork,
     ILogger<GenericController<Participante, ParticipanteDTO, ParticipantePatchDTO>> logger,
-    IDTOMapper<ParticipanteDTO, Participante, ParticipantePatchDTO> mapper)
-    : base(unitOfWork, logger, mapper)
+    IDTOMapper<ParticipanteDTO, Participante, ParticipantePatchDTO> mapper, EventosService eventosService)
+    : base(unitOfWork, logger, mapper, eventosService)
         {
         }
     }

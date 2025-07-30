@@ -20,5 +20,10 @@ namespace APIGerenciamento.Repositories
         public void Update(T e) => _db.Update(e);
 
         public void Remove(T e) => _db.Remove(e);
+
+        public IQueryable<T> Query()
+        {
+            return _db.AsNoTracking();
+        }
     }
 }

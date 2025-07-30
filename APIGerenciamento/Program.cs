@@ -33,6 +33,8 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IDTOMapper<ParticipanteDTO, Participante, ParticipantePatchDTO>, ParticipanteMapper>();
 builder.Services.AddScoped<IDTOMapper<EventoDTO, Evento, EventoPatchDTO>, EventoMapper>();
 builder.Services.AddScoped<IDTOMapper<InscricaoDTO, Inscricao, InscricaoPatchDTO>, InscricaoMapper>();
+builder.Services.AddScoped<EventosService>();
+
 
 // Filtros e Serialização JSON
 builder.Services.AddControllers(options =>
