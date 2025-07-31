@@ -4,6 +4,7 @@ using APIGerenciamento.Models;
 using APIGerenciamento.Repositories;
 using APIGerenciamento.Services;
 using APIGerenciamento.UnitOfWork;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +12,7 @@ using System.Runtime.InteropServices;
 
 namespace APIGerenciamento.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class GenericController<TEntity, TDto, TPatchDto> : ControllerBase where TEntity : class, IEntidade

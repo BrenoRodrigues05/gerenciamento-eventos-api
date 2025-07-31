@@ -1,10 +1,12 @@
 ﻿using APIGerenciamento.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace APIGerenciamento.Controllers
 {
+    
     [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
@@ -22,6 +24,7 @@ namespace APIGerenciamento.Controllers
             public string? Senha { get; set; }
         }
 
+        [AllowAnonymous]
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginRequest request)
         {

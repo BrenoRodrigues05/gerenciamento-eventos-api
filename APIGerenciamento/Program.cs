@@ -10,6 +10,9 @@ using APIGerenciamento.Models;
 using APIGerenciamento.Repositories;
 using APIGerenciamento.Services;
 using APIGerenciamento.UnitOfWork;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -18,7 +21,34 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Configuração do Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "APIGerenciamento", Version = "v1" });
+
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "Insira o token JWT no formato: Bearer {token}",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] { }
+        }
+    });
+});
 
 // Configuração do banco de dados
 var mysqlconnection = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -39,6 +69,13 @@ builder.Services.AddScoped<EventosService>();
 // Filtros e Serialização JSON
 builder.Services.AddControllers(options =>
 {
+    var policy = new AuthorizationPolicyBuilder()
+       .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+       .RequireAuthenticatedUser()
+       .Build();
+
+    options.Filters.Add(new AuthorizeFilter(policy));
+    options.Filters.Add<APILoggingFilter>();
     options.Filters.Add<APILoggingFilter>();
 })
 .AddJsonOptions(options =>
@@ -55,18 +92,45 @@ builder.Logging.AddProvider(new CustomLoggerProvider(new CustomLoggerProviderCon
 
 
 // Autenticação JWT
-builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer("Bearer", options =>
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
         var config = builder.Configuration;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
-            ValidateIssuerSigningKey = true,
             ValidIssuer = config["JwtSettings:Issuer"],
             ValidAudience = config["JwtSettings:Audience"],
+            ValidateLifetime = true, // VALIDA DATA DE EXPIRAÇÃO
+            ValidateIssuerSigningKey = true,
+            RequireExpirationTime = true, //  EXIGE EXPIRAÇÃO NO TOKEN
+            RequireSignedTokens = true,   // EXIGE TOKEN ASSINADO
+            ClockSkew = TimeSpan.FromMinutes(5),   // OPCIONAL, sem tolerância de horário
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtSettings:SecretKey"]))
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine("Token inválido: " + context.Exception.Message);
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("Token validado com sucesso!");
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+                var result = System.Text.Json.JsonSerializer.Serialize(new { error = "Acesso negado. " +
+                    "Token inválido ou ausente." });
+                return context.Response.WriteAsync(result);
+            }
         };
     });
 

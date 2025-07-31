@@ -1,40 +1,40 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using APIGerenciamento.Services;
+using Microsoft.IdentityModel.Tokens;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using APIGerenciamento.Services;
 
 namespace APIGerenciamento.Services
 {
     public class AuthService
     {
-        private readonly ConfigService _config;
+        private readonly ConfigService _configService;
 
         public AuthService(ConfigService config)
         {
-            _config = config;
+            _configService = config;
         }
 
-        public string GerarToken(string usuarioId, string email, string cargo)
+        public string GerarToken(string usuarioId, string email, string role)
         {
-            var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetJwtSecret()));
-            var credentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, usuarioId),
-                new Claim(JwtRegisteredClaimNames.Email, email),
-                new Claim(ClaimTypes.Role, cargo),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+               new Claim(JwtRegisteredClaimNames.Sub, usuarioId),
+               new Claim(JwtRegisteredClaimNames.Email, email),
+               new Claim(ClaimTypes.Role, role)
             };
 
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configService.GetJwtSecret()));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
             var token = new JwtSecurityToken(
-                issuer: _config.GetJwtIssuer(),
-                audience: _config.GetJwtAudience(),
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(2),
-                signingCredentials: credentials
-            );
+               issuer: _configService.GetJwtIssuer(),
+               audience: _configService.GetJwtAudience(),
+               claims: claims,
+               expires: DateTime.UtcNow.AddHours(1),
+               signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
