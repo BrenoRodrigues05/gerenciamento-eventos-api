@@ -4,19 +4,25 @@ using APIGerenciamento.Repositories;
 
 namespace APIGerenciamento.UnitOfWork
 {
-    public class UnitOfWork : IUnitOfWork
+    public class UnitOfWork : IUnitOfWork, IDisposable
     {
+        public IParticipanteRepository ParticipanteRepository { get; }
         private readonly APIGerenciamentoContext _ctx;
         public IRepository<Evento> Eventos { get; }
         public IRepository<Participante> Participantes { get; }
         public IRepository<Inscricao> Inscricoes { get; }
 
-        public UnitOfWork(APIGerenciamentoContext ctx)
+        public IEventoRepository EventoRepository { get; }
+
+        public UnitOfWork(APIGerenciamentoContext ctx, IParticipanteRepository participanteRepository, 
+            IEventoRepository eventoRepository)
         {
             _ctx = ctx;
             Eventos = new Repository<Evento>(ctx);
             Participantes = new Repository<Participante>(ctx);
             Inscricoes = new Repository<Inscricao>(ctx);
+            ParticipanteRepository = participanteRepository;
+            EventoRepository = eventoRepository;
         }
         public Task<int> CommitAsync() => _ctx.SaveChangesAsync();
         public void Dispose() => _ctx.Dispose();

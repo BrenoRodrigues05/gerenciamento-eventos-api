@@ -1,4 +1,6 @@
-﻿namespace APIGerenciamento.Repositories
+﻿using APIGerenciamento.Pagination;
+
+namespace APIGerenciamento.Repositories
 {
     public interface IRepository<T> where T : class
     {

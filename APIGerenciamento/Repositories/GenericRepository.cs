@@ -1,5 +1,7 @@
 ﻿
 using APIGerenciamento.Context;
+using APIGerenciamento.Models;
+using APIGerenciamento.Pagination;
 using Microsoft.EntityFrameworkCore;
 
 namespace APIGerenciamento.Repositories
@@ -25,5 +27,6 @@ namespace APIGerenciamento.Repositories
         {
             return _db.AsNoTracking();
         }
+
     }
 }
