@@ -26,6 +26,7 @@ namespace APIGerenciamento.Controllers
             _unitOfWork = unitOfWork;
         }
 
+        [Authorize(Roles = "Admin,SuperAdmin")]
         [HttpGet("filtro-nome")]
 
         public async Task<IActionResult> GetFiltroNomesParticipantesAsync([FromQuery] FiltroNomeParticipante filtro)

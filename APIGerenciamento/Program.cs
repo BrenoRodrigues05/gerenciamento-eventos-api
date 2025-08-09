@@ -141,6 +141,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("Admin"));
+
+    options.AddPolicy("SuperAdminOnly", policy =>
+        policy.RequireRole("SuperAdmin"));
+});
+
 var app = builder.Build();
 
 // Middleware global de tratamento de exceções

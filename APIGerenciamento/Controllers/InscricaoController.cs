@@ -17,6 +17,7 @@ namespace APIGerenciamento.Controllers
         public InscricaoController(IUnitOfWork uow) => _uow = uow;
 
         [HttpGet]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> GetAll()
         {
             var inscricoes = await _uow.Inscricoes.GetAllAsync();
