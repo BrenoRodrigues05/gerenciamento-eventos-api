@@ -14,9 +14,12 @@ namespace APIGerenciamento.UnitOfWork
 
         public IEventoRepository EventoRepository { get; }
 
+        public IUsuarioRepository Usuario { get; }
+
         public UnitOfWork(APIGerenciamentoContext ctx, IParticipanteRepository participanteRepository, 
-            IEventoRepository eventoRepository)
+            IEventoRepository eventoRepository, IUsuarioRepository usuarioRepository)
         {
+            Usuario = usuarioRepository;
             _ctx = ctx;
             Eventos = new Repository<Evento>(ctx);
             Participantes = new Repository<Participante>(ctx);

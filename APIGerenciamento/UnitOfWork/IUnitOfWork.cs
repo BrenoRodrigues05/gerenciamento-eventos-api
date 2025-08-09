@@ -10,6 +10,8 @@ namespace APIGerenciamento.UnitOfWork
         IRepository<Inscricao> Inscricoes { get; }
         IEventoRepository EventoRepository { get; }
         IParticipanteRepository ParticipanteRepository { get; }
+
+        IUsuarioRepository Usuario { get; }
         Task<int> CommitAsync();
     }
 }

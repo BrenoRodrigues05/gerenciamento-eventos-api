@@ -19,11 +19,15 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuração do Swagger
+// Configuração do Swagger com segurança JWT
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "APIGerenciamento", Version = "v1" });
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "APIGerenciamento",
+        Version = "v1"
+    });
 
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
@@ -45,12 +49,12 @@ builder.Services.AddSwaggerGen(c =>
                     Id = "Bearer"
                 }
             },
-            new string[] { }
+            Array.Empty<string>()
         }
     });
 });
 
-// Configuração do banco de dados
+// Configuração do banco de dados MySQL
 var mysqlconnection = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<APIGerenciamentoContext>(options =>
     options.UseMySql(mysqlconnection, ServerVersion.AutoDetect(mysqlconnection)));
@@ -66,8 +70,9 @@ builder.Services.AddScoped<IDTOMapper<InscricaoDTO, Inscricao, InscricaoPatchDTO
 builder.Services.AddScoped<EventosService>();
 builder.Services.AddScoped<IParticipanteRepository, ParticipanteRepository>();
 builder.Services.AddScoped<IEventoRepository, EventoRepository>();
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 
-// Filtros e Serialização JSON
+// Configuração de Controllers com autenticação padrão e filtros
 builder.Services.AddControllers(options =>
 {
     var policy = new AuthorizationPolicyBuilder()
@@ -77,20 +82,19 @@ builder.Services.AddControllers(options =>
 
     options.Filters.Add(new AuthorizeFilter(policy));
     options.Filters.Add<APILoggingFilter>();
-    options.Filters.Add<APILoggingFilter>();
 })
 .AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
     options.JsonSerializerOptions.WriteIndented = true;
-}).AddNewtonsoftJson();
+})
+.AddNewtonsoftJson();
 
 // Logger customizado
 builder.Logging.AddProvider(new CustomLoggerProvider(new CustomLoggerProviderConfiguration
 {
     LogLevel = LogLevel.Information
 }));
-
 
 // Autenticação JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -103,11 +107,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidIssuer = config["JwtSettings:Issuer"],
             ValidAudience = config["JwtSettings:Audience"],
-            ValidateLifetime = true, // VALIDA DATA DE EXPIRAÇÃO
+            ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            RequireExpirationTime = true, //  EXIGE EXPIRAÇÃO NO TOKEN
-            RequireSignedTokens = true,   // EXIGE TOKEN ASSINADO
-            ClockSkew = TimeSpan.FromMinutes(5),   // OPCIONAL, sem tolerância de horário
+            RequireExpirationTime = true,
+            RequireSignedTokens = true,
+            ClockSkew = TimeSpan.FromMinutes(5),
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtSettings:SecretKey"]))
         };
 
@@ -115,7 +119,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             OnAuthenticationFailed = context =>
             {
-                Console.WriteLine("Token inválido: " + context.Exception.Message);
+                Console.WriteLine($"Token inválido: {context.Exception.Message}");
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>
@@ -128,8 +132,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 context.HandleResponse();
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 context.Response.ContentType = "application/json";
-                var result = System.Text.Json.JsonSerializer.Serialize(new { error = "Acesso negado. " +
-                    "Token inválido ou ausente." });
+                var result = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    error = "Acesso negado. Token inválido ou ausente."
+                });
                 return context.Response.WriteAsync(result);
             }
         };
@@ -137,10 +143,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
-// Middleware de exceções
+// Middleware global de tratamento de exceções
 app.UseMiddleware<ExceptionMiddleware>();
 
-// Swagger no ambiente de desenvolvimento
+// Swagger apenas em desenvolvimento
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

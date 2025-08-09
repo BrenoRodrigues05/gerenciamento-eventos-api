@@ -13,6 +13,8 @@ namespace APIGerenciamento.Context
             public DbSet<Participante> Participantes { get; set; }
             public DbSet<Inscricao> Inscricoes { get; set; }
 
+        public DbSet<Usuario> Usuarios { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Inscricao>()

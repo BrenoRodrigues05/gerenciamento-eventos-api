@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using APIGerenciamento.DTOs;
+
 
 namespace APIGerenciamento.Controllers
 {
@@ -26,18 +28,34 @@ namespace APIGerenciamento.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            // Exemplo fixo só para testes:
+            var token = await _authService.LoginAsync(request.Email!, request.Senha!);
+            if (token == null)
+                return Unauthorized("Credenciais inválidas");
 
-            if (request.Email == "admin@teste.com" && request.Senha == "123")
-            {
-                var token = _authService.GerarToken("1", request.Email, "Admin");
-                return Ok(new { token });
-            }
-
-            return Unauthorized("Credenciais inválidas");
+            return Ok(new { token });
         }
+
+        [AllowAnonymous]
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] DTOs.RegisterRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var existingUser = await _authService.GetUsuarioByEmailAsync(request.Email);
+            if (existingUser != null)
+                return Conflict("Usuário com este email já existe.");
+
+            var usuario = await _authService.RegisterAsync(request.Email, request.Senha, request.Role ?? "User");
+
+            if (usuario == null)
+                return StatusCode(500, "Erro ao criar usuário.");
+
+            return Ok(new { usuario.Id, usuario.Email });
+        }
+
     }
 }
 
