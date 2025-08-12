@@ -2,66 +2,124 @@
 using APIGerenciamento.DTOs.Patch;
 using APIGerenciamento.Interfaces;
 using APIGerenciamento.Models;
-using APIGerenciamento.Pagination;
 using APIGerenciamento.Services;
 using APIGerenciamento.UnitOfWork;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 
 namespace APIGerenciamento.Controllers
 {
     [Authorize]
-    [Route("api/[controller]")]
     [ApiController]
-    public class EventoController : GenericController<Evento, EventoDTO, EventoPatchDTO>
+    [Route("api/[controller]")]
+    public class EventosController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
-        public EventoController(
-     IUnitOfWork unitOfWork,
-     ILogger<GenericController<Evento, EventoDTO, EventoPatchDTO>> logger,
-     IDTOMapper<EventoDTO, Evento, EventoPatchDTO> mapper, EventosService eventosService)
-     : base(unitOfWork, logger, mapper, eventosService)
+        private readonly ILogger<EventosController> _logger;
+        private readonly IDTOMapper<EventoDTO, Evento, EventoPatchDTO> _mapper;
+        private readonly EventosService _eventosService;
+
+        public EventosController(IUnitOfWork unitOfWork,
+            ILogger<EventosController> logger,
+            IDTOMapper<EventoDTO, Evento, EventoPatchDTO> mapper,
+            EventosService eventosService)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
+            _mapper = mapper;
+            _eventosService = eventosService;
         }
-    
-    [HttpGet("filtro-título")]
-       
-        public async Task<IActionResult> GetFiltroTitulosEventosAsync([FromQuery] FiltroEventoTitulo filtro)
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
         {
-            if (filtro.PageNumber < 1 || filtro.PageSize < 1)
-                return BadRequest(new { message = "PageNumber e PageSize devem ser maiores que zero." });
-
-            var pagedEventos = await _unitOfWork.EventoRepository.GetTituloEventoAsync(filtro);
-
-            if (pagedEventos == null || !pagedEventos.Items.Any())
-                return NotFound(new { message = "Nenhum evento encontrado com o título informado." });
-
-            
-            var eventosDTO = pagedEventos.Items.Select(e => new EventoDTO
-            {
-                Id = e.Id,
-                Titulo = e.Titulo,
-                Data = e.Data,
-                Local = e.Local,
-              
-            }).ToList();
-
-            var response = new
-            {
-                Items = eventosDTO,
-                pagedEventos.TotalItems,
-                pagedEventos.PageNumber,
-                pagedEventos.PageSize
-            };
-
-            Response.Headers["X-Total-Count"] = pagedEventos.TotalItems.ToString();
-            Response.Headers["X-Page-Number"] = pagedEventos.PageNumber.ToString();
-            Response.Headers["X-Page-Size"] = pagedEventos.PageSize.ToString();
-
-            return Ok(response);
+            var eventos = await _unitOfWork.Eventos.GetAllAsync();
+            var dtos = eventos.Select(e => _mapper.ToDto(e));
+            return Ok(dtos);
         }
 
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var evento = await _unitOfWork.Eventos.GetByIdAsync(id);
+            if (evento == null) return NotFound();
+            return Ok(_mapper.ToDto(evento));
+        }
+
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] EventoDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            try
+            {
+                var evento = _mapper.ToEntity(dto);
+                await _unitOfWork.Eventos.AddAsync(evento);
+                await _unitOfWork.CommitAsync();
+
+                var createdDto = _mapper.ToDto(evento);
+                return CreatedAtAction(nameof(GetById), new { id = evento.Id }, createdDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao criar evento");
+                return StatusCode(500, "Erro interno ao criar evento.");
+            }
+        }
+
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] EventoDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var existing = await _unitOfWork.Eventos.GetByIdAsync(id);
+            if (existing == null) return NotFound();
+
+            var updated = _mapper.ToEntity(dto);
+            updated.Id = id;
+
+            _unitOfWork.Eventos.Update(updated);
+            await _unitOfWork.CommitAsync();
+
+            return NoContent();
+        }
+
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> Patch(int id, [FromBody] JsonPatchDocument<EventoPatchDTO> patchDoc)
+        {
+            if (patchDoc == null) return BadRequest();
+
+            var evento = await _unitOfWork.Eventos.GetByIdAsync(id);
+            if (evento == null) return NotFound();
+
+            var patchDto = _mapper.ToPatchDto(evento);
+            patchDoc.ApplyTo(patchDto, ModelState);
+
+            if (!TryValidateModel(patchDto)) return BadRequest(ModelState);
+
+            _mapper.PatchToEntity(patchDto, evento);
+            _unitOfWork.Eventos.Update(evento);
+            await _unitOfWork.CommitAsync();
+
+            return NoContent();
+        }
+
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var evento = await _unitOfWork.Eventos.GetByIdAsync(id);
+            if (evento == null) return NotFound();
+
+            _unitOfWork.Eventos.Remove(evento);
+            await _unitOfWork.CommitAsync();
+
+            return NoContent();
+        }
     }
-}       
+}

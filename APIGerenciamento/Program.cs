@@ -155,6 +155,22 @@ var app = builder.Build();
 // Middleware global de tratamento de exceções
 app.UseMiddleware<ExceptionMiddleware>();
 
+// Middleware para resposta 403 personalizada
+app.Use(async (context, next) =>
+{
+    await next();
+
+    if (context.Response.StatusCode == 403 && !context.Response.HasStarted)
+    {
+        context.Response.ContentType = "application/json";
+        var result = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            error = "Você não tem permissão para acessar este recurso."
+        });
+        await context.Response.WriteAsync(result);
+    }
+});
+
 // Swagger apenas em desenvolvimento
 if (app.Environment.IsDevelopment())
 {
