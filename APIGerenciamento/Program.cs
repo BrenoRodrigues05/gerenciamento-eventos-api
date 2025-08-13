@@ -13,9 +13,12 @@ using APIGerenciamento.UnitOfWork;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +61,29 @@ builder.Services.AddSwaggerGen(c =>
 var mysqlconnection = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<APIGerenciamentoContext>(options =>
     options.UseMySql(mysqlconnection, ServerVersion.AutoDetect(mysqlconnection)));
+
+// Política padrão
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("default", builder =>
+    {
+        builder.Window = TimeSpan.FromMinutes(1);
+        builder.PermitLimit = 100; // Limite de 100 requisições por minuto
+        builder.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        builder.QueueLimit = 10; // Limite de 10 requisições na fila
+    });
+
+    options.AddFixedWindowLimiter("loginPolicy", builder =>
+    {
+        builder.Window = TimeSpan.FromMinutes(1);
+        builder.PermitLimit = 5; // Limite de 5 tentativas por minuto
+        builder.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        builder.QueueLimit = 0; // Sem fila
+    });
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests; // Código de status para requisições rejeitadas
+});
+
 
 // Injeção de dependências
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -151,6 +177,12 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+app.UseRateLimiter();
+
+app.MapControllers().RequireRateLimiting("default");
+app.MapPost("/login", () => "Tentando login...")
+   .RequireRateLimiting("loginPolicy");
 
 // Middleware global de tratamento de exceções
 app.UseMiddleware<ExceptionMiddleware>();
