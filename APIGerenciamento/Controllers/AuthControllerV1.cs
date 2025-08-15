@@ -4,18 +4,20 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using APIGerenciamento.DTOs;
+using Asp.Versioning;
 
 
 namespace APIGerenciamento.Controllers
 {
-    
-    [Route("api/[controller]")]
+
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
-    public class AuthController : ControllerBase
+    [Microsoft.AspNetCore.Mvc.ApiVersion("1.0")]
+    public class AuthControllerV1 : ControllerBase
     {
         private readonly AuthService _authService;
 
-        public AuthController(AuthService authService)
+        public AuthControllerV1(AuthService authService)
         {
             _authService = authService;
         }
@@ -48,7 +50,7 @@ namespace APIGerenciamento.Controllers
             if (existingUser != null)
                 return Conflict("Usuário com este email já existe.");
 
-            var usuario = await _authService.RegisterAsync(request.Email, request.Senha, request.Role ?? "User");
+            var usuario = await _authService.RegisterAsync(request.Email, request.Senha, "User");
 
             if (usuario == null)
                 return StatusCode(500, "Erro ao criar usuário.");
@@ -58,4 +60,3 @@ namespace APIGerenciamento.Controllers
 
     }
 }
-

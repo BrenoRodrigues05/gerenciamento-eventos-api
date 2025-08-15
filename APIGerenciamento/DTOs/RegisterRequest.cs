@@ -12,7 +12,5 @@ namespace APIGerenciamento.DTOs
         [MinLength(6, ErrorMessage = "Senha deve ter pelo menos 6 caracteres")]
         public string Senha { get; set; } = null!;
 
-        public string? Role { get; set; }
-
     }
 }
