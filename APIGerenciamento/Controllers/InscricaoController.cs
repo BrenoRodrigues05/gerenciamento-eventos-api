@@ -2,13 +2,15 @@
 using APIGerenciamento.Models;
 using APIGerenciamento.UnitOfWork;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace APIGerenciamento.Controllers
 {
+    /// <summary>
+    /// Controller responsável pelo gerenciamento de inscrições em eventos.
+    /// </summary>
     [Authorize]
-    [ApiVersion("1.0")]
+    [ApiVersion("1.0", Deprecated = true)]
     [ApiVersion("2.0")]
     [Route("api/[controller]")]
     [ApiController]
@@ -16,8 +18,19 @@ namespace APIGerenciamento.Controllers
     {
         private readonly IUnitOfWork _uow;
 
+        /// <summary>
+        /// Construtor do controller de inscrições.
+        /// </summary>
+        /// <param name="uow">Unit of Work para acesso aos repositórios</param>
         public InscricaoController(IUnitOfWork uow) => _uow = uow;
 
+        /// <summary>
+        /// Retorna todas as inscrições cadastradas.
+        /// </summary>
+        /// <remarks>
+        /// Necessita permissão de Admin ou SuperAdmin.
+        /// </remarks>
+        /// <returns>Lista de inscrições com informações do evento e participante.</returns>
         [HttpGet]
         [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> GetAll()
@@ -37,6 +50,13 @@ namespace APIGerenciamento.Controllers
             return Ok(resposta);
         }
 
+        /// <summary>
+        /// Cria uma nova inscrição para um participante em um evento.
+        /// </summary>
+        /// <param name="dto">DTO com os IDs do evento e do participante</param>
+        /// <returns>Inscrição criada com sucesso ou mensagem de erro.</returns>
+        /// <response code="201">Inscrição criada com sucesso.</response>
+        /// <response code="400">Erro de validação, evento ou participante não encontrados, evento lotado ou participante já inscrito.</response>
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] InscricaoDTO dto)
         {

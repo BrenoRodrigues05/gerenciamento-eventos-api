@@ -38,6 +38,10 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v2"
     });
 
+    var xlmFileName = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xlmFileName));
+
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Description = "Insira o token JWT no formato: Bearer {token}",

@@ -10,9 +10,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace APIGerenciamento.Controllers
 {
+    /// <summary>
+    /// Controller responsável pelo gerenciamento de eventos.
+    /// </summary>
     [Authorize]
     [ApiController]
-    [ApiVersion("1.0")]
+    [ApiVersion("1.0", Deprecated = true)]
     [ApiVersion("2.0")]
     [Route("api/[controller]")]
     public class EventosController : ControllerBase
@@ -22,6 +25,13 @@ namespace APIGerenciamento.Controllers
         private readonly IDTOMapper<EventoDTO, Evento, EventoPatchDTO> _mapper;
         private readonly EventosService _eventosService;
 
+        /// <summary>
+        /// Construtor do controller de eventos.
+        /// </summary>
+        /// <param name="unitOfWork">Unit of Work para persistência</param>
+        /// <param name="logger">Logger para rastreamento de erros</param>
+        /// <param name="mapper">Mapper para conversão entre DTOs e entidades</param>
+        /// <param name="eventosService">Serviço de regras de negócio para eventos</param>
         public EventosController(IUnitOfWork unitOfWork,
             ILogger<EventosController> logger,
             IDTOMapper<EventoDTO, Evento, EventoPatchDTO> mapper,
@@ -33,7 +43,12 @@ namespace APIGerenciamento.Controllers
             _eventosService = eventosService;
         }
 
+        /// <summary>
+        /// Retorna todos os eventos.
+        /// </summary>
+        /// <returns>Lista de eventos em formato DTO.</returns>
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAll()
         {
             var eventos = await _unitOfWork.Eventos.GetAllAsync();
@@ -41,6 +56,11 @@ namespace APIGerenciamento.Controllers
             return Ok(dtos);
         }
 
+        /// <summary>
+        /// Retorna um evento pelo ID.
+        /// </summary>
+        /// <param name="id">ID do evento</param>
+        /// <returns>Evento correspondente ao ID informado.</returns>
         [Authorize(Roles = "Admin,SuperAdmin")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -50,6 +70,11 @@ namespace APIGerenciamento.Controllers
             return Ok(_mapper.ToDto(evento));
         }
 
+        /// <summary>
+        /// Cria um novo evento.
+        /// </summary>
+        /// <param name="dto">DTO contendo os dados do evento</param>
+        /// <returns>Evento criado com sucesso.</returns>
         [Authorize(Roles = "SuperAdmin")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] EventoDTO dto)
@@ -72,6 +97,11 @@ namespace APIGerenciamento.Controllers
             }
         }
 
+        /// <summary>
+        /// Atualiza um evento existente completamente.
+        /// </summary>
+        /// <param name="id">ID do evento a ser atualizado</param>
+        /// <param name="dto">DTO com os dados atualizados do evento</param>
         [Authorize(Roles = "Admin,SuperAdmin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] EventoDTO dto)
@@ -90,6 +120,11 @@ namespace APIGerenciamento.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Aplica alterações parciais a um evento existente.
+        /// </summary>
+        /// <param name="id">ID do evento a ser alterado</param>
+        /// <param name="patchDoc">Documento JSON Patch com as alterações</param>
         [Authorize(Roles = "SuperAdmin")]
         [HttpPatch("{id}")]
         public async Task<IActionResult> Patch(int id, [FromBody] JsonPatchDocument<EventoPatchDTO> patchDoc)
@@ -111,6 +146,10 @@ namespace APIGerenciamento.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Remove um evento existente.
+        /// </summary>
+        /// <param name="id">ID do evento a ser removido</param>
         [Authorize(Roles = "SuperAdmin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

@@ -10,9 +10,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace APIGerenciamento.Controllers
 {
+    /// <summary>
+    /// Controller responsável pelo gerenciamento de participantes.
+    /// </summary>
     [Authorize]
     [ApiController]
-    [ApiVersion("1.0")]
+    [ApiVersion("1.0", Deprecated = true)]
     [ApiVersion("2.0")]
     [Route("api/[controller]")]
     public class ParticipantesController : ControllerBase
@@ -21,6 +24,9 @@ namespace APIGerenciamento.Controllers
         private readonly ILogger<ParticipantesController> _logger;
         private readonly IDTOMapper<ParticipanteDTO, Participante, ParticipantePatchDTO> _mapper;
 
+        /// <summary>
+        /// Construtor do controller de participantes.
+        /// </summary>
         public ParticipantesController(IUnitOfWork unitOfWork,
             ILogger<ParticipantesController> logger,
             IDTOMapper<ParticipanteDTO, Participante, ParticipantePatchDTO> mapper)
@@ -30,6 +36,10 @@ namespace APIGerenciamento.Controllers
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Retorna todos os participantes cadastrados.
+        /// </summary>
+        /// <returns>Lista de ParticipanteDTO</returns>
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -38,6 +48,11 @@ namespace APIGerenciamento.Controllers
             return Ok(dtos);
         }
 
+        /// <summary>
+        /// Retorna um participante pelo ID.
+        /// </summary>
+        /// <param name="id">ID do participante</param>
+        /// <returns>ParticipanteDTO correspondente</returns>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -46,6 +61,14 @@ namespace APIGerenciamento.Controllers
             return Ok(_mapper.ToDto(participante));
         }
 
+        /// <summary>
+        /// Cria um novo participante.
+        /// </summary>
+        /// <param name="dto">Dados do participante a ser criado</param>
+        /// <returns>Participante criado</returns>
+        /// <response code="201">Participante criado com sucesso</response>
+        /// <response code="400">Dados inválidos</response>
+        /// <response code="500">Erro interno ao criar participante</response>
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ParticipanteDTO dto)
         {
@@ -67,6 +90,11 @@ namespace APIGerenciamento.Controllers
             }
         }
 
+        /// <summary>
+        /// Atualiza todos os dados de um participante existente.
+        /// </summary>
+        /// <param name="id">ID do participante</param>
+        /// <param name="dto">Dados atualizados</param>
         [Authorize(Roles = "Admin,SuperAdmin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] ParticipanteDTO dto)
@@ -85,6 +113,11 @@ namespace APIGerenciamento.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Atualiza parcialmente os dados de um participante.
+        /// </summary>
+        /// <param name="id">ID do participante</param>
+        /// <param name="patchDoc">Documento JSON Patch contendo as alterações</param>
         [Authorize(Roles = "Admin,SuperAdmin")]
         [HttpPatch("{id}")]
         public async Task<IActionResult> Patch(int id, [FromBody] JsonPatchDocument<ParticipantePatchDTO> patchDoc)
@@ -106,6 +139,10 @@ namespace APIGerenciamento.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Remove um participante existente.
+        /// </summary>
+        /// <param name="id">ID do participante</param>
         [Authorize(Roles = "Admin,SuperAdmin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

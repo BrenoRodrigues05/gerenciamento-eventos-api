@@ -12,6 +12,9 @@ using ApiVersionAttribute = Microsoft.AspNetCore.Mvc.ApiVersionAttribute;
 
 namespace APIGerenciamento.Controllers
 {
+    /// <summary>
+    /// Controller responsável pela autenticação, registro e gerenciamento de roles de usuários.
+    /// </summary>
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
     [ApiVersion("2.0")]
@@ -21,6 +24,12 @@ namespace APIGerenciamento.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRepository<Usuario> _usuarioRepository;
 
+        /// <summary>
+        /// Construtor do controller de autenticação V2.
+        /// </summary>
+        /// <param name="authService">Serviço de autenticação</param>
+        /// <param name="unitOfWork">Unit of Work para persistência</param>
+        /// <param name="usuarioRepository">Repositório de usuários</param>
         public AuthControllerV2(AuthService authService, IUnitOfWork unitOfWork, IUsuarioRepository
             usuarioRepository)
         {
@@ -29,12 +38,27 @@ namespace APIGerenciamento.Controllers
             _usuarioRepository = usuarioRepository;
         }
 
+        /// <summary>
+        /// DTO interno para requisição de login.
+        /// </summary>
         public class LoginRequest
         {
+            /// <summary>
+            /// Email do usuário
+            /// </summary>
             public string? Email { get; set; }
+
+            /// <summary>
+            /// Senha do usuário
+            /// </summary>
             public string? Senha { get; set; }
         }
 
+        /// <summary>
+        /// Realiza o login do usuário e retorna um token JWT.
+        /// </summary>
+        /// <param name="request">Objeto contendo email e senha do usuário.</param>
+        /// <returns>Token JWT em caso de sucesso ou erro de autenticação.</returns>
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
@@ -46,6 +70,11 @@ namespace APIGerenciamento.Controllers
             return Ok(new { token });
         }
 
+        /// <summary>
+        /// Registra um novo usuário no sistema.
+        /// </summary>
+        /// <param name="dto">Objeto contendo email e senha para registro.</param>
+        /// <returns>Mensagem de sucesso após registro do usuário.</returns>
         [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest dto)
@@ -63,7 +92,12 @@ namespace APIGerenciamento.Controllers
             return Ok(new { mensagem = "Usuário registrado com sucesso!" });
         }
 
-
+        /// <summary>
+        /// Altera a role de um usuário existente.
+        /// </summary>
+        /// <param name="usuarioId">ID do usuário cuja role será alterada</param>
+        /// <param name="novaRole">Nova role que será atribuída ao usuário</param>
+        /// <returns>Mensagem de sucesso ou erro caso o usuário não seja encontrado.</returns>
         [Authorize(Roles = "SuperAdmin")]
         [HttpPut("change-role/{usuarioId}")]
         public async Task<IActionResult> ChangeRole(int usuarioId, [FromBody] string novaRole)
