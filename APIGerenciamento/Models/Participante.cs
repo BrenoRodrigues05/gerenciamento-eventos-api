@@ -10,9 +10,10 @@ namespace APIGerenciamento.Models
     {
         [Key]
         public int Id { get; set; }
+
         [Required(ErrorMessage = "O nome é obrigatório.")]
         [StringLength(100, ErrorMessage = "O nome pode ter no máximo 100 caracteres.")]
-        [PrimeiraLetraMaiuscula(ErrorMessage = "O título deve começar com letra maiúscula.")]
+        [PrimeiraLetraMaiuscula(ErrorMessage = "O nome deve começar com letra maiúscula.")]
         public string? Nome { get; set; }
         [Required(ErrorMessage = "O e-mail é obrigatório.")]
         [EmailAddress(ErrorMessage = "O e-mail não é válido.")]

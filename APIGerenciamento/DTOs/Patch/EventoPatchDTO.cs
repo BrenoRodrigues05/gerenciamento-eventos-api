@@ -12,6 +12,11 @@ namespace APIGerenciamento.DTOs.Patch
         [StringLength(500, ErrorMessage = "A descrição pode ter no máximo 500 caracteres.")]
         public string? Descricao { get; set; }
 
+        [PrimeiraLetraMaiuscula(ErrorMessage = "O Estado deve começar com letra maiúscula.")]
+        public string? Cidade { get; set; }
+
+        public string? Entrada { get; set; } = "Gratuita"; // Entrada padrão como "Gratuita"
+
         public DateTime? Data { get; set; }
 
         [StringLength(200, ErrorMessage = "O local pode ter no máximo 200 caracteres.")]

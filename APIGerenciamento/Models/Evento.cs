@@ -1,5 +1,6 @@
 ﻿using APIGerenciamento.Interfaces;
 using APIGerenciamento.Validations;
+using Newtonsoft.Json.Serialization;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -14,6 +15,14 @@ namespace APIGerenciamento.Models
         [StringLength(100, ErrorMessage = "O título pode ter no máximo 100 caracteres.")]
         [PrimeiraLetraMaiuscula(ErrorMessage = "O título deve começar com letra maiúscula.")]
         public string? Titulo { get; set; }
+
+        [Required(ErrorMessage = "O Estado é obrigatório")]
+        [PrimeiraLetraMaiuscula(ErrorMessage = "O Estado deve começar com letra maiúscula.")]
+        public string? Cidade { get; set; }
+
+        [Required]
+        public string ? Entrada { get; set; } = "Gratuita"; // Entrada padrão como "Gratuita"
+
         [Required]
         [StringLength(500, ErrorMessage = "A descrição pode ter no máximo 500 caracteres.")]
         public string? Descricao { get; set; }

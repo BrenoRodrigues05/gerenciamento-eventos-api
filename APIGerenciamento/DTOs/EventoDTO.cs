@@ -25,6 +25,13 @@ namespace APIGerenciamento.DTOs
         [Range(1, int.MaxValue, ErrorMessage = "O número de vagas deve ser maior que zero.")]
         public int Vagas { get; set; }
 
-        
+        [Required(ErrorMessage = "O Estado é obrigatório")]
+        [PrimeiraLetraMaiuscula(ErrorMessage = "O Estado deve começar com letra maiúscula.")]
+        public string? Cidade { get; set; }
+
+        [Required]
+        public string? Entrada { get; set; } = "Gratuita"; // Entrada padrão como "Gratuita"
+
+
     }
 }

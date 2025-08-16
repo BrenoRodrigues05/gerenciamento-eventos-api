@@ -16,7 +16,9 @@ namespace APIGerenciamento.DTOs.Mappings
                 Descricao = dto.Descricao,
                 Data = dto.Data,
                 Local = dto.Local,
-                Vagas = dto.Vagas
+                Vagas = dto.Vagas,
+                Cidade = dto.Cidade,
+                Entrada = dto.Entrada ?? "Gratuita"
             };
         }
 
@@ -29,7 +31,9 @@ namespace APIGerenciamento.DTOs.Mappings
                 Descricao = entity.Descricao,
                 Data = entity.Data,
                 Local = entity.Local,
-                Vagas = entity.Vagas
+                Vagas = entity.Vagas,
+                Cidade = entity.Cidade,
+                Entrada = entity.Entrada ?? "Gratuita"
             };
         }
 
@@ -41,7 +45,9 @@ namespace APIGerenciamento.DTOs.Mappings
                 Descricao = entity.Descricao,
                 Data = entity.Data,
                 Local = entity.Local,
-                Vagas = entity.Vagas
+                Vagas = entity.Vagas,
+                Cidade = entity.Cidade,
+                Entrada = entity.Entrada ?? "Gratuita"
             };
         }
 
@@ -52,6 +58,8 @@ namespace APIGerenciamento.DTOs.Mappings
             if (dto.Data.HasValue) entity.Data = dto.Data.Value;
             if (dto.Local != null) entity.Local = dto.Local;
             if (dto.Vagas.HasValue) entity.Vagas = dto.Vagas.Value;
+            if (dto.Cidade != null) entity.Cidade = dto.Cidade;     
+            if (dto.Entrada != null) entity.Entrada = dto.Entrada;
         }
     }
 }
