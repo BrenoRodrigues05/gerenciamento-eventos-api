@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36310.24 d17.14
+VisualStudioVersion = 17.14.36310.24
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "APIGerenciamento", "APIGerenciamento\APIGerenciamento.csproj", "{DF629B0B-998F-4B8B-9D87-2305F86D811E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GerenciamentoTest", "GerenciamentoTest\GerenciamentoTest.csproj", "{BC2E626C-7F0F-4EED-8274-369DDCA01BD4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{DF629B0B-998F-4B8B-9D87-2305F86D811E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF629B0B-998F-4B8B-9D87-2305F86D811E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF629B0B-998F-4B8B-9D87-2305F86D811E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC2E626C-7F0F-4EED-8274-369DDCA01BD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC2E626C-7F0F-4EED-8274-369DDCA01BD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC2E626C-7F0F-4EED-8274-369DDCA01BD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC2E626C-7F0F-4EED-8274-369DDCA01BD4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

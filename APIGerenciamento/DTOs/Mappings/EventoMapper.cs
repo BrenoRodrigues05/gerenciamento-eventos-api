@@ -1,6 +1,8 @@
 ﻿using APIGerenciamento.DTOs.Patch;
 using APIGerenciamento.Interfaces;
 using APIGerenciamento.Models;
+using APIGerenciamento.DTOs.Mappings;
+
 
 namespace APIGerenciamento.DTOs.Mappings
 {

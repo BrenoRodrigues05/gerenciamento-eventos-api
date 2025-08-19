@@ -111,10 +111,15 @@ namespace APIGerenciamento.Controllers
             var existing = await _unitOfWork.Eventos.GetByIdAsync(id);
             if (existing == null) return NotFound();
 
-            var updated = _mapper.ToEntity(dto);
-            updated.Id = id;
+            existing.Titulo = dto.Titulo;
+            existing.Data = dto.Data;
+            existing.Local = dto.Local;
+            existing.Vagas = dto.Vagas;
+            existing.Cidade = dto.Cidade;
+            existing.Entrada = dto.Entrada;
+            existing.Descricao = dto.Descricao;
 
-            _unitOfWork.Eventos.Update(updated);
+            _unitOfWork.Eventos.Update(existing);
             await _unitOfWork.CommitAsync();
 
             return NoContent();
