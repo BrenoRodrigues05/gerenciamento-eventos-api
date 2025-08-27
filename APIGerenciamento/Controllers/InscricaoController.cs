@@ -1,5 +1,6 @@
 ﻿using APIGerenciamento.DTOs;
 using APIGerenciamento.Models;
+using APIGerenciamento.Services;
 using APIGerenciamento.UnitOfWork;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,12 +18,17 @@ namespace APIGerenciamento.Controllers
     public class InscricaoController : ControllerBase
     {
         private readonly IUnitOfWork _uow;
+        private readonly InscricaoCacheService _inscricaoCacheService;
 
         /// <summary>
         /// Construtor do controller de inscrições.
         /// </summary>
         /// <param name="uow">Unit of Work para acesso aos repositórios</param>
-        public InscricaoController(IUnitOfWork uow) => _uow = uow;
+        public InscricaoController(IUnitOfWork uow, InscricaoCacheService inscricaoCacheService)
+        {
+            _uow = uow;
+            _inscricaoCacheService = inscricaoCacheService;
+        }
 
         /// <summary>
         /// Retorna todas as inscrições cadastradas.
@@ -35,7 +41,7 @@ namespace APIGerenciamento.Controllers
         [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> GetAll()
         {
-            var inscricoes = await _uow.Inscricoes.GetAllAsync();
+            var inscricoes = await _inscricaoCacheService.GetAllAsync();
 
             var resposta = inscricoes.Select(i => new InscricaoDTO
             {
@@ -94,6 +100,8 @@ namespace APIGerenciamento.Controllers
 
             evento.Vagas -= 1;
             _uow.Eventos.Update(evento);
+
+            _inscricaoCacheService.InvalidateCache();
 
             await _uow.CommitAsync();
 

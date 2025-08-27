@@ -24,6 +24,7 @@ namespace APIGerenciamento.Controllers
         private readonly ILogger<EventosController> _logger;
         private readonly IDTOMapper<EventoDTO, Evento, EventoPatchDTO> _mapper;
         private readonly EventosService _eventosService;
+        private readonly EventosCacheService _eventosCacheService;
 
         /// <summary>
         /// Construtor do controller de eventos.
@@ -35,12 +36,14 @@ namespace APIGerenciamento.Controllers
         public EventosController(IUnitOfWork unitOfWork,
             ILogger<EventosController> logger,
             IDTOMapper<EventoDTO, Evento, EventoPatchDTO> mapper,
-            EventosService eventosService)
+            EventosService eventosService,
+            EventosCacheService eventosCacheService)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
             _mapper = mapper;
             _eventosService = eventosService;
+            _eventosCacheService = eventosCacheService;
         }
 
         /// <summary>
@@ -51,8 +54,7 @@ namespace APIGerenciamento.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetAll()
         {
-            var eventos = await _unitOfWork.Eventos.GetAllAsync();
-            var dtos = eventos.Select(e => _mapper.ToDto(e));
+            var dtos = await _eventosCacheService.GetAllAsync();
             return Ok(dtos);
         }
 
@@ -65,9 +67,9 @@ namespace APIGerenciamento.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var evento = await _unitOfWork.Eventos.GetByIdAsync(id);
+            var evento = await _eventosCacheService.GetEventoByIdAsync(id);
             if (evento == null) return NotFound();
-            return Ok(_mapper.ToDto(evento));
+            return Ok(evento);
         }
 
         /// <summary>
@@ -86,6 +88,8 @@ namespace APIGerenciamento.Controllers
                 var evento = _mapper.ToEntity(dto);
                 await _unitOfWork.Eventos.AddAsync(evento);
                 await _unitOfWork.CommitAsync();
+
+                _eventosCacheService.InvalidateCache();
 
                 var createdDto = _mapper.ToDto(evento);
                 return CreatedAtAction(nameof(GetById), new { id = evento.Id }, createdDto);
@@ -122,6 +126,8 @@ namespace APIGerenciamento.Controllers
             _unitOfWork.Eventos.Update(existing);
             await _unitOfWork.CommitAsync();
 
+            _eventosCacheService.InvalidateCache(id);
+
             return NoContent();
         }
 
@@ -148,6 +154,8 @@ namespace APIGerenciamento.Controllers
             _unitOfWork.Eventos.Update(evento);
             await _unitOfWork.CommitAsync();
 
+            _eventosCacheService.InvalidateCache(id);
+
             return NoContent();
         }
 
@@ -164,6 +172,8 @@ namespace APIGerenciamento.Controllers
 
             _unitOfWork.Eventos.Remove(evento);
             await _unitOfWork.CommitAsync();
+
+            _eventosCacheService.InvalidateCache(id);
 
             return NoContent();
         }

@@ -23,17 +23,20 @@ namespace APIGerenciamento.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<ParticipantesController> _logger;
         private readonly IDTOMapper<ParticipanteDTO, Participante, ParticipantePatchDTO> _mapper;
+        private readonly ParticipanteCacheService _participanteCacheService;
 
         /// <summary>
         /// Construtor do controller de participantes.
         /// </summary>
         public ParticipantesController(IUnitOfWork unitOfWork,
             ILogger<ParticipantesController> logger,
-            IDTOMapper<ParticipanteDTO, Participante, ParticipantePatchDTO> mapper)
+            IDTOMapper<ParticipanteDTO, Participante, ParticipantePatchDTO> mapper,
+            ParticipanteCacheService participanteCacheService)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
             _mapper = mapper;
+            _participanteCacheService = participanteCacheService;
         }
 
         /// <summary>
@@ -43,9 +46,8 @@ namespace APIGerenciamento.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var participantes = await _unitOfWork.Participantes.GetAllAsync();
-            var dtos = participantes.Select(p => _mapper.ToDto(p));
-            return Ok(dtos);
+            var participantes = await _participanteCacheService.GetAllAsync();
+            return Ok(participantes);
         }
 
         /// <summary>
@@ -56,9 +58,9 @@ namespace APIGerenciamento.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var participante = await _unitOfWork.Participantes.GetByIdAsync(id);
+            var participante = await _participanteCacheService.GetParticipanteByIdAsync(id);
             if (participante == null) return NotFound();
-            return Ok(_mapper.ToDto(participante));
+            return Ok(participante);
         }
 
         /// <summary>
@@ -79,6 +81,8 @@ namespace APIGerenciamento.Controllers
                 var participante = _mapper.ToEntity(dto);
                 await _unitOfWork.Participantes.AddAsync(participante);
                 await _unitOfWork.CommitAsync();
+
+                _participanteCacheService.InvalidateCache();
 
                 var createdDto = _mapper.ToDto(participante);
                 return CreatedAtAction(nameof(GetById), new { id = participante.Id }, createdDto);
@@ -110,6 +114,8 @@ namespace APIGerenciamento.Controllers
             _unitOfWork.Participantes.Update(updated);
             await _unitOfWork.CommitAsync();
 
+            _participanteCacheService.InvalidateCache(id);
+
             return NoContent();
         }
 
@@ -136,6 +142,8 @@ namespace APIGerenciamento.Controllers
             _unitOfWork.Participantes.Update(participante);
             await _unitOfWork.CommitAsync();
 
+            _participanteCacheService.InvalidateCache(id);
+
             return NoContent();
         }
 
@@ -152,6 +160,8 @@ namespace APIGerenciamento.Controllers
 
             _unitOfWork.Participantes.Remove(participante);
             await _unitOfWork.CommitAsync();
+
+            _participanteCacheService.InvalidateCache(id);
 
             return NoContent();
         }

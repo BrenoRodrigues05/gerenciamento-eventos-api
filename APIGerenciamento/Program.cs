@@ -107,6 +107,14 @@ builder.Services.AddScoped<IParticipanteRepository, ParticipanteRepository>();
 builder.Services.AddScoped<IEventoRepository, EventoRepository>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 
+
+//Memory Cache
+
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<ParticipanteCacheService>();
+builder.Services.AddScoped<EventosCacheService>();
+builder.Services.AddScoped<InscricaoCacheService>();
+
 // Controllers + filtros
 builder.Services.AddControllers(options =>
 {
