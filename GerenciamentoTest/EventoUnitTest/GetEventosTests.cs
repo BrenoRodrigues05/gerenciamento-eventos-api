@@ -24,7 +24,7 @@ namespace GerenciamentoTest.EventoUnitTest
         private readonly Mock<IEventoRepository> _mockRepo;
         private readonly EventoMapper _mapper;
         private readonly Mock<EventosService> _mockService;
-
+       
         public GetEventosTests()
         {
             _mockUnitOfWork = new Mock<IUnitOfWork>();
@@ -50,12 +50,15 @@ namespace GerenciamentoTest.EventoUnitTest
 
             _mockUnitOfWork.Setup(u => u.Eventos).Returns(_mockRepo.Object);
 
+            var fakeCache = new FakeEventosCacheService(_mockUnitOfWork.Object, _mapper);
+
             // Instancia do controller com todos os parâmetros
             _controller = new EventosController(
                 _mockUnitOfWork.Object,
                 Mock.Of<ILogger<EventosController>>(),
                 _mapper,
-                _mockService.Object
+                _mockService.Object,
+                fakeCache
             );
         }
 

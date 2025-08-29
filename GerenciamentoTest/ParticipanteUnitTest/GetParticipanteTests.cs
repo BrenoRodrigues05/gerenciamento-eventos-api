@@ -25,7 +25,7 @@ namespace GerenciamentoTest.ParticipanteUnitTest
         private readonly Mock<IParticipanteRepository> _mockRepo;
         private readonly ParticipanteMapper _mapper;
         private readonly Mock<EventosService> _mockService;
-
+        
         public GetParticipanteTests()
         {
             _mockUnitOfWork = new Mock<IUnitOfWork>();
@@ -61,10 +61,13 @@ namespace GerenciamentoTest.ParticipanteUnitTest
 
             _mockUnitOfWork.Setup(u => u.Participantes).Returns(_mockRepo.Object);
 
+            var fakeCache = new FakeParticipantesCacheService(_mockUnitOfWork.Object, _mapper);
+
             _controller = new ParticipantesController(
                 _mockUnitOfWork.Object,
                  Mock.Of<ILogger<ParticipantesController>>(),
-                 _mapper
+                 _mapper,
+                 fakeCache
             );
            
         }

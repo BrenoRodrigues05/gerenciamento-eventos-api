@@ -1,4 +1,7 @@
 ﻿using APIGerenciamento.Controllers;
+using APIGerenciamento.DTOs;
+using APIGerenciamento.DTOs.Patch;
+using APIGerenciamento.Interfaces;
 using APIGerenciamento.Models;
 using APIGerenciamento.Repositories;
 using APIGerenciamento.Services;
@@ -18,7 +21,7 @@ namespace GerenciamentoTest.EventoUnitTest
         private readonly EventosController _controller;
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly Mock<IEventoRepository> _mockEventoRepo;
-
+        private readonly IDTOMapper<EventoDTO, Evento, EventoPatchDTO> _mapper = new APIGerenciamento.DTOs.Mappings.EventoMapper();
         public DeleteEventosTests()
         {
             _mockUnitOfWork = new Mock<IUnitOfWork>();
@@ -42,12 +45,14 @@ namespace GerenciamentoTest.EventoUnitTest
 
             var eventosService = new EventosService(_mockUnitOfWork.Object);
             var logger = NullLogger<EventosController>.Instance;
+            var fakeCache = new FakeEventosCacheService(_mockUnitOfWork.Object, _mapper);
 
             _controller = new EventosController(
                 _mockUnitOfWork.Object,
                 logger,
                 new APIGerenciamento.DTOs.Mappings.EventoMapper(),
-                eventosService
+                eventosService,
+                fakeCache
             )
             {
                 ControllerContext = controllerContext

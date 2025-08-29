@@ -27,7 +27,7 @@ namespace GerenciamentoTest.ParticipanteUnitTest
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly Mock<IParticipanteRepository> _mockParticipanteRepository;
         private readonly IDTOMapper<ParticipanteDTO, Participante, ParticipantePatchDTO> _mapper;
-
+        
         public DeleteParticipanteTests()
         {
             _mockUnitOfWork = new Mock<IUnitOfWork>();
@@ -48,11 +48,13 @@ namespace GerenciamentoTest.ParticipanteUnitTest
 
             var participantesService = new EventosService(_mockUnitOfWork.Object);
             var logger = NullLogger<ParticipantesController>.Instance;
+            var fakeCache = new FakeParticipantesCacheService(_mockUnitOfWork.Object, _mapper);
 
             _Controller = new ParticipantesController(
                 _mockUnitOfWork.Object,
                 logger,
-               _mapper
+               _mapper,
+                fakeCache
             );
         }
 

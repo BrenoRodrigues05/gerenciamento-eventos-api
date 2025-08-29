@@ -5,6 +5,7 @@ using APIGerenciamento.DTOs.Patch;
 using APIGerenciamento.Interfaces;
 using APIGerenciamento.Models;
 using APIGerenciamento.Repositories;
+using APIGerenciamento.Services;
 using APIGerenciamento.UnitOfWork;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +25,7 @@ namespace GerenciamentoTest.ParticipanteUnitTest
         private readonly ParticipantesController _participantesController;
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly IDTOMapper<ParticipanteDTO, Participante, ParticipantePatchDTO> _mapper;
-
+        private readonly ParticipanteCacheService _mockCacheService;
         public PostParticipanteUnitTests()
         {
             _mockUnitOfWork = new Mock<IUnitOfWork>();
@@ -40,10 +41,13 @@ namespace GerenciamentoTest.ParticipanteUnitTest
             _mockUnitOfWork.Setup(u => u.CommitAsync())
                 .ReturnsAsync(1);
 
+            var fakeCache = new FakeParticipantesCacheService(_mockUnitOfWork.Object, _mapper);
+
             _participantesController = new ParticipantesController(
              _mockUnitOfWork.Object,
              NullLogger<ParticipantesController>.Instance,
-               _mapper
+               _mapper,
+               fakeCache
            );
         }
 

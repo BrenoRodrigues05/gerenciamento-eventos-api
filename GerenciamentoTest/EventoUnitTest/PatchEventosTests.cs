@@ -25,7 +25,7 @@ namespace GerenciamentoTest.EventoUnitTest
         private readonly Mock<IEventoRepository> _mockRepo;
         private readonly EventoMapper _mapper;
         private readonly EventosService _eventosService;
-
+        
         public PatchEventosTests()
         {
             // Mocks
@@ -39,12 +39,15 @@ namespace GerenciamentoTest.EventoUnitTest
             // Serviço real usando UnitOfWork mockado
             _eventosService = new EventosService(_mockUnitOfWork.Object);
 
+            var FakeCache = new FakeEventosCacheService(_mockUnitOfWork.Object, _mapper);
+
             // Controller
             _controller = new EventosController(
                 _mockUnitOfWork.Object,
                 Mock.Of<Microsoft.Extensions.Logging.ILogger<EventosController>>(),
                 _mapper,
-                _eventosService
+                _eventosService,
+                FakeCache
             );
 
             // Necessário para TryValidateModel

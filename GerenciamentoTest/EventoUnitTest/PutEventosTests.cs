@@ -24,7 +24,7 @@ namespace GerenciamentoTest.EventoUnitTest
         private readonly Mock<IEventoRepository> _mockRepo;
         private readonly Mock<ILogger<EventosController>> _mockLogger;
         private readonly IDTOMapper<EventoDTO, Evento, EventoPatchDTO> _mapper;
-
+       
         public PutEventosTests()
         {
             _mockUnitOfWork = new Mock<IUnitOfWork>();
@@ -35,11 +35,15 @@ namespace GerenciamentoTest.EventoUnitTest
             _mockUnitOfWork.Setup(u => u.Eventos).Returns(_mockRepo.Object);
             _mockUnitOfWork.Setup(u => u.CommitAsync()).ReturnsAsync(1);
 
+            var mockEventosService = new Mock<EventosService>(_mockUnitOfWork.Object) { CallBase = false };
+            var fakeCache = new FakeEventosCacheService(_mockUnitOfWork.Object, _mapper);
+
             _controller = new EventosController(
                 _mockUnitOfWork.Object,
                 _mockLogger.Object,
                 _mapper,
-                null // Sem serviço para PUT
+                mockEventosService.Object,
+                fakeCache
             );
         }
 

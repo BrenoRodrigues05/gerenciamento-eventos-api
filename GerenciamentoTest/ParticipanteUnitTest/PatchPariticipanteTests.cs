@@ -24,7 +24,7 @@ namespace GerenciamentoTest.ParticipanteUnitTest
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly Mock<IParticipanteRepository> _mockRepo;
         private readonly Mock<IDTOMapper<ParticipanteDTO, Participante, ParticipantePatchDTO>> _mockMapper;
-
+       
         public PatchParticipanteTests()
         {
             // Mocks
@@ -52,11 +52,14 @@ namespace GerenciamentoTest.ParticipanteUnitTest
                            if (dto.Telefone != null) entity.Telefone = dto.Telefone;
                        });
 
+            var fakeCache = new FakeParticipantesCacheService(_mockUnitOfWork.Object, _mockMapper.Object);
+
             // Controller
             _controller = new ParticipantesController(
                 _mockUnitOfWork.Object,
                 Mock.Of<Microsoft.Extensions.Logging.ILogger<ParticipantesController>>(),
-                _mockMapper.Object
+                _mockMapper.Object,
+                fakeCache
             );
 
             // Necessário para TryValidateModel funcionar

@@ -22,7 +22,7 @@ namespace GerenciamentoTest.EventoUnitTest
         private readonly EventosController _controller;
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly IDTOMapper<EventoDTO, Evento, EventoPatchDTO> _mapper;
-
+        
         public PostEventosTests()
         {
             _mockUnitOfWork = new Mock<IUnitOfWork>();
@@ -38,13 +38,15 @@ namespace GerenciamentoTest.EventoUnitTest
 
             // Instancia real do service
             var eventosService = new EventosService(_mockUnitOfWork.Object);
+            var fakeCache = new FakeEventosCacheService(_mockUnitOfWork.Object, _mapper);
 
             // Controller com logger nulo e service real
             _controller = new EventosController(
                 _mockUnitOfWork.Object,
                 NullLogger<EventosController>.Instance,
                 _mapper,
-                eventosService
+                eventosService,
+                fakeCache
             );
         }
 

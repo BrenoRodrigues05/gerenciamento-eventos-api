@@ -5,6 +5,7 @@ using APIGerenciamento.DTOs.Patch;
 using APIGerenciamento.Interfaces;
 using APIGerenciamento.Models;
 using APIGerenciamento.Repositories;
+using APIGerenciamento.Services;
 using APIGerenciamento.UnitOfWork;
 using AutoMapper;
 using FluentAssertions;
@@ -14,6 +15,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -26,7 +28,7 @@ public class PutParticipanteTests
     private readonly Mock<IParticipanteRepository> _mockParticipanteRepository;
     private readonly IDTOMapper<ParticipanteDTO, Participante, ParticipantePatchDTO> _mapper;
     private readonly Mock<ILogger<ParticipantesController>> _mockLogger;
-
+    private readonly ParticipanteCacheService _mockCacheService;
     public PutParticipanteTests()
     {
         _mockUnitOfWork = new Mock<IUnitOfWork>();
@@ -38,10 +40,13 @@ public class PutParticipanteTests
             .Returns(_mockParticipanteRepository.Object);
         _mockUnitOfWork.Setup(u => u.CommitAsync()).ReturnsAsync(1);
 
+        var fakeCache = new FakeParticipantesCacheService(_mockUnitOfWork.Object, _mapper);
+
         _Controller = new ParticipantesController(
             _mockUnitOfWork.Object,
             _mockLogger.Object,
-            _mapper
+            _mapper,
+            fakeCache
         );
     }
 
