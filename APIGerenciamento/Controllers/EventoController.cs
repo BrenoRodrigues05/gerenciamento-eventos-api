@@ -46,6 +46,18 @@ namespace APIGerenciamento.Controllers
             _eventosCacheService = eventosCacheService;
         }
 
+        //teste
+
+        
+        [HttpGet("teste")]
+        [AllowAnonymous]
+        public IActionResult teste()
+        {
+            return Ok("API de Gerenciamento de Eventos está funcionando!");
+        }
+
+
+
         /// <summary>
         /// Retorna todos os eventos.
         /// </summary>

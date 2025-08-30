@@ -211,23 +211,22 @@ app.Use(async (context, next) =>
 });
 
 // Swagger com múltiplas versões
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
+    foreach (var description in apiVersionDescriptionProvider.ApiVersionDescriptions)
     {
-        foreach (var description in apiVersionDescriptionProvider.ApiVersionDescriptions)
-        {
-            options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json",
-                description.GroupName.ToUpperInvariant());
-        }
-    });
-}
+        options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json",
+            description.GroupName.ToUpperInvariant());
+    }
+
+    options.RoutePrefix = "swagger"; // rota = http://localhost:8081/swagger
+});
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.MapGet("/", () => "API de Gerenciamento de Eventos está funcionando!").AllowAnonymous();
 app.Run();
