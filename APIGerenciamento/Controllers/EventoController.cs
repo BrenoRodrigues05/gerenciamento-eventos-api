@@ -75,7 +75,7 @@ namespace APIGerenciamento.Controllers
         /// </summary>
         /// <param name="id">ID do evento</param>
         /// <returns>Evento correspondente ao ID informado.</returns>
-        [Authorize(Roles = "Admin,SuperAdmin")]
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {

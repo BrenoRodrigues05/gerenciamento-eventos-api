@@ -1,4 +1,5 @@
-﻿using APIGerenciamento.Pagination;
+﻿using APIGerenciamento.Models;
+using APIGerenciamento.Pagination;
 
 namespace APIGerenciamento.Repositories
 {
@@ -10,6 +11,7 @@ namespace APIGerenciamento.Repositories
         Task AddAsync(T entity);
         void Update(T entity);
         void Remove(T entity);
+
     }
 
 

@@ -6,5 +6,7 @@ namespace APIGerenciamento.Repositories
     public interface IParticipanteRepository : IRepository<Participante>
     {
         Task<PagedResult<Participante>> GetFiltroNomesParticipantesAsync(FiltroNomeParticipante filtro);
+
+        Task<Participante?> GetByEmailAsync(string email);
     }
 }

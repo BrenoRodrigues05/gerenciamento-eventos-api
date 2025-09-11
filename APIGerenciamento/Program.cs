@@ -22,6 +22,14 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configura Kestrel para múltiplas portas
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(8080);
+    options.ListenAnyIP(8081); // porta principal para Swagger/API
+    options.ListenAnyIP(5110); // porta para o MVC
+});
+
 // Swagger + JWT
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -39,7 +47,6 @@ builder.Services.AddSwaggerGen(options =>
     });
 
     var xlmFileName = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xlmFileName));
 
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
@@ -107,9 +114,7 @@ builder.Services.AddScoped<IParticipanteRepository, ParticipanteRepository>();
 builder.Services.AddScoped<IEventoRepository, EventoRepository>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 
-
-//Memory Cache
-
+// Memory Cache
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ParticipanteCacheService>();
 builder.Services.AddScoped<EventosCacheService>();
@@ -118,12 +123,6 @@ builder.Services.AddScoped<InscricaoCacheService>();
 // Controllers + filtros
 builder.Services.AddControllers(options =>
 {
-    var policy = new AuthorizationPolicyBuilder()
-       .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
-       .RequireAuthenticatedUser()
-       .Build();
-
-    options.Filters.Add(new AuthorizeFilter(policy));
     options.Filters.Add<APILoggingFilter>();
 })
 .AddJsonOptions(options =>
@@ -162,24 +161,32 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Autorização
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy =>
-        policy.RequireRole("Admin"));
-
-    options.AddPolicy("SuperAdminOnly", policy =>
-        policy.RequireRole("SuperAdmin"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("SuperAdmin"));
 });
 
-// Versionamento
+// Versionamento de API (ajustado para V2 como default)
 builder.Services.AddApiVersioning(options =>
 {
     options.AssumeDefaultVersionWhenUnspecified = true;
-    options.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(1, 0);
+    options.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(2, 0); // V2 como padrão
     options.ReportApiVersions = true;
 });
 builder.Services.AddVersionedApiExplorer(options =>
 {
     options.GroupNameFormat = "'v'VVV";
     options.SubstituteApiVersionInUrl = true;
+});
+
+// Habilita CORS para o MVC
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowMVC", policy =>
+    {
+        policy.WithOrigins("http://localhost:5110")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
 });
 
 var app = builder.Build();
@@ -190,7 +197,6 @@ var apiVersionDescriptionProvider = app.Services.GetRequiredService<IApiVersionD
 // Rate limiter global
 app.UseRateLimiter();
 app.MapControllers().RequireRateLimiting("default");
-app.MapPost("/login", () => "Tentando login...").RequireRateLimiting("loginPolicy");
 
 // Middleware de exceções
 app.UseMiddleware<ExceptionMiddleware>();
@@ -224,9 +230,21 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseHttpsRedirection();
+
+// Habilita CORS
+app.UseCors("AllowMVC");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Controllers
 app.MapControllers();
-app.MapGet("/", () => "API de Gerenciamento de Eventos está funcionando!").AllowAnonymous();
+
+// Redireciona a raiz direto para o Swagger
+app.MapGet("/", context =>
+{
+    context.Response.Redirect("/swagger");
+    return Task.CompletedTask;
+}).AllowAnonymous();
+
 app.Run();

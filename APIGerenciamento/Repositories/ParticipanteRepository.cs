@@ -32,6 +32,10 @@ namespace APIGerenciamento.Repositories
                 PageSize = filtro.PageSize
             };
         }
+        public async Task<Participante?> GetByEmailAsync(string email)
+        {
+            return await _db.FirstOrDefaultAsync(p => p.Email == email);
+        }
     }
 
 }

@@ -50,6 +50,24 @@ namespace APIGerenciamento.Controllers
             return Ok(participantes);
         }
 
+        [HttpGet("email/{email}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetByEmail(string email)
+        {
+            var participante = await _unitOfWork.ParticipanteRepository.GetByEmailAsync(email);
+            if (participante == null) return NotFound("Participante não encontrado.");
+
+            var dto = new ParticipanteDTO
+            {
+                Id = participante.Id,
+                Nome = participante.Nome,
+                Email = participante.Email,
+                Telefone = participante.Telefone
+            };
+
+            return Ok(dto);
+        }
+
         /// <summary>
         /// Retorna um participante pelo ID.
         /// </summary>
@@ -99,7 +117,7 @@ namespace APIGerenciamento.Controllers
         /// </summary>
         /// <param name="id">ID do participante</param>
         /// <param name="dto">Dados atualizados</param>
-        [Authorize(Roles = "Admin,SuperAdmin")]
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] ParticipanteDTO dto)
         {
@@ -124,7 +142,7 @@ namespace APIGerenciamento.Controllers
         /// </summary>
         /// <param name="id">ID do participante</param>
         /// <param name="patchDoc">Documento JSON Patch contendo as alterações</param>
-        [Authorize(Roles = "Admin,SuperAdmin")]
+        [Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> Patch(int id, [FromBody] JsonPatchDocument<ParticipantePatchDTO> patchDoc)
         {
@@ -151,7 +169,7 @@ namespace APIGerenciamento.Controllers
         /// Remove um participante existente.
         /// </summary>
         /// <param name="id">ID do participante</param>
-        [Authorize(Roles = "Admin,SuperAdmin")]
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

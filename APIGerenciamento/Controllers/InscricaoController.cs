@@ -38,7 +38,7 @@ namespace APIGerenciamento.Controllers
         /// </remarks>
         /// <returns>Lista de inscrições com informações do evento e participante.</returns>
         [HttpGet]
-        [Authorize(Roles = "Admin,SuperAdmin")]
+        [Authorize]
         public async Task<IActionResult> GetAll()
         {
             var inscricoes = await _inscricaoCacheService.GetAllAsync();
@@ -64,35 +64,48 @@ namespace APIGerenciamento.Controllers
         /// <response code="201">Inscrição criada com sucesso.</response>
         /// <response code="400">Erro de validação, evento ou participante não encontrados, evento lotado ou participante já inscrito.</response>
         [HttpPost]
+        [HttpPost]
         public async Task<IActionResult> Create([FromBody] InscricaoDTO dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            // 🔑 Pega o ParticipanteId do token
+            var participanteIdClaim = User.FindFirst("sub")?.Value;
+            if (participanteIdClaim is null)
+                return Unauthorized("Token inválido ou sem participanteId.");
+
+            if (!int.TryParse(participanteIdClaim, out var participanteId))
+                return Unauthorized("ParticipanteId inválido no token.");
+
+            // Busca evento
             var evento = await _uow.Eventos.GetByIdAsync(dto.EventoId);
             if (evento is null)
                 return BadRequest("Evento não encontrado.");
 
-            var participante = await _uow.Participantes.GetByIdAsync(dto.ParticipanteId);
+            var participante = await _uow.Participantes.GetByIdAsync(participanteId);
             if (participante is null)
                 return BadRequest("Participante não encontrado.");
 
+            // Verifica se evento está lotado
             var inscricoesEvento = (await _uow.Inscricoes.GetAllAsync())
                 .Count(i => i.EventoId == dto.EventoId);
 
             if (inscricoesEvento >= evento.Vagas)
                 return BadRequest("Evento lotado.");
 
+            // Verifica duplicidade
             var jaInscrito = (await _uow.Inscricoes.GetAllAsync())
-                .Any(i => i.EventoId == dto.EventoId && i.ParticipanteId == dto.ParticipanteId);
+                .Any(i => i.EventoId == dto.EventoId && i.ParticipanteId == participanteId);
 
             if (jaInscrito)
                 return BadRequest("Participante já inscrito.");
 
+            // Cria inscrição
             var novaInscricao = new Inscricao
             {
                 EventoId = dto.EventoId,
-                ParticipanteId = dto.ParticipanteId,
+                ParticipanteId = participanteId,
                 DataInscricao = DateTime.Now
             };
 
@@ -105,12 +118,15 @@ namespace APIGerenciamento.Controllers
 
             await _uow.CommitAsync();
 
+            // Atualiza DTO de resposta
             dto.Id = novaInscricao.Id;
+            dto.ParticipanteId = participanteId;
             dto.DataInscricao = novaInscricao.DataInscricao;
             dto.NomeEvento = evento.Titulo;
             dto.NomeParticipante = participante.Nome;
 
             return CreatedAtAction(nameof(Create), new { id = dto.Id }, dto);
         }
+
     }
 }
