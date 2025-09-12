@@ -10,7 +10,7 @@ namespace APIGerenciamento.Controllers
     /// <summary>
     /// Controller responsável pelo gerenciamento de inscrições em eventos.
     /// </summary>
-    [Authorize]
+    
     [ApiVersion("1.0", Deprecated = true)]
     [ApiVersion("2.0")]
     [Route("api/[controller]")]
@@ -38,7 +38,7 @@ namespace APIGerenciamento.Controllers
         /// </remarks>
         /// <returns>Lista de inscrições com informações do evento e participante.</returns>
         [HttpGet]
-        [Authorize]
+        
         public async Task<IActionResult> GetAll()
         {
             var inscricoes = await _inscricaoCacheService.GetAllAsync();
@@ -63,26 +63,38 @@ namespace APIGerenciamento.Controllers
         /// <returns>Inscrição criada com sucesso ou mensagem de erro.</returns>
         /// <response code="201">Inscrição criada com sucesso.</response>
         /// <response code="400">Erro de validação, evento ou participante não encontrados, evento lotado ou participante já inscrito.</response>
+        
         [HttpPost]
-        [HttpPost]
+        [AllowAnonymous]
         public async Task<IActionResult> Create([FromBody] InscricaoDTO dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // 🔑 Pega o ParticipanteId do token
-            var participanteIdClaim = User.FindFirst("sub")?.Value;
-            if (participanteIdClaim is null)
-                return Unauthorized("Token inválido ou sem participanteId.");
+            int participanteId;
 
-            if (!int.TryParse(participanteIdClaim, out var participanteId))
-                return Unauthorized("ParticipanteId inválido no token.");
+            // 🔑 Tenta pegar do token
+            var participanteIdClaim = User.FindFirst("sub")?.Value;
+            if (!string.IsNullOrEmpty(participanteIdClaim) && int.TryParse(participanteIdClaim, out var idFromToken))
+            {
+                participanteId = idFromToken;
+            }
+            // Se não houver token, pega do DTO
+            else if (dto.ParticipanteId > 0)
+            {
+                participanteId = dto.ParticipanteId;
+            }
+            else
+            {
+                return Unauthorized("Token inválido ou sem participanteId.");
+            }
 
             // Busca evento
             var evento = await _uow.Eventos.GetByIdAsync(dto.EventoId);
             if (evento is null)
                 return BadRequest("Evento não encontrado.");
 
+            // Busca participante
             var participante = await _uow.Participantes.GetByIdAsync(participanteId);
             if (participante is null)
                 return BadRequest("Participante não encontrado.");
@@ -115,10 +127,9 @@ namespace APIGerenciamento.Controllers
             _uow.Eventos.Update(evento);
 
             _inscricaoCacheService.InvalidateCache();
-
             await _uow.CommitAsync();
 
-            // Atualiza DTO de resposta
+            // Prepara resposta
             dto.Id = novaInscricao.Id;
             dto.ParticipanteId = participanteId;
             dto.DataInscricao = novaInscricao.DataInscricao;
